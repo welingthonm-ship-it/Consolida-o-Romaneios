@@ -3,62 +3,103 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Portal de Consolidação — Sequência de Entrega</title>
+<title>Nexxa · Consolidação de Romaneios</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-:root{--bg:#f6f5f1;--card:#fff;--ink:#1d2329;--muted:#66707a;--line:#e3e1da;--accent:#0f6b5c;--accent-soft:#e3f1ed;--warn:#a5520c;--warn-soft:#fbefe2;--err:#b3261e}
-@media (prefers-color-scheme:dark){:root{--bg:#15191c;--card:#1d2226;--ink:#e8eaec;--muted:#9aa3ab;--line:#2e353a;--accent:#4fbfa8;--accent-soft:#183a33;--warn:#f0a35c;--warn-soft:#3a2a1a;--err:#ff8a80}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif}
-main{max-width:1080px;margin:0 auto;padding:32px 20px 60px}
-h1{font-size:24px;margin:0 0 4px;font-weight:600}.sub{color:var(--muted);margin:0 0 28px}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}@media(max-width:860px){.grid{grid-template-columns:1fr}}
-.opt{font:500 11px "IBM Plex Mono",monospace;color:var(--muted);margin-left:6px}
-.drop{background:var(--card);border:1.5px dashed var(--line);border-radius:12px;padding:22px;cursor:pointer;transition:.15s;position:relative}
-.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
-.drop.ok{border-style:solid;border-color:var(--accent)}
-.drop .step{font:500 12px "IBM Plex Mono",monospace;color:var(--accent);letter-spacing:.06em}
-.drop h2{font-size:17px;margin:4px 0 2px}.drop p{margin:0;color:var(--muted);font-size:13.5px}
-.drop ul{margin:10px 0 0;padding:0;list-style:none;font-size:13px}.drop li{padding:3px 0;display:flex;justify-content:space-between;gap:8px}
-.drop li button{background:none;border:0;color:var(--muted);cursor:pointer;font-size:15px}
+/* Identidade Nexxa — mesmo layout da Torre de Controle */
+:root{--nx-g1:#0B3B22;--nx-g2:#2E8B4A;--nx-g3:#45A85F;--nx-soft:#EAF5EE;--bg:#F4F7F5;--card:#FFFFFF;--ink:#16241B;--muted:#5B6B61;--line:#E1E9E3;--ok:#1E8E4A;--warn:#D08A06;--bad:#C8382D;--radius:8px;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,"Segoe UI",system-ui,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:20px 20px 40px;display:flex;flex-direction:column;gap:18px}
+.serif{font-family:"Source Serif 4",Georgia,serif;font-weight:400}
+/* faixa do topo */
+.nx-banner{background:#fff;border:1px solid var(--line);border-top:4px solid var(--nx-g2);border-radius:var(--radius);padding:16px 20px;display:flex;flex-direction:column;gap:6px;box-shadow:0 1px 3px rgba(16,40,24,.06)}
+.nx-brand{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.nx-logo img{display:block;height:40px;width:auto;max-width:60vw}
+.nx-brand>div:last-child{border-left:1px solid var(--line);padding-left:20px}
+.nx-title{margin:0;color:var(--nx-g1);font-size:18px;font-weight:600}
+.nx-subtitle{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.lead{margin:0;color:var(--muted)}
+.lead b{color:var(--ink);font-weight:500}
+/* cards de envio */
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.drop{background:#fff;border:1px solid var(--line);border-top:3px solid var(--nx-g2);border-radius:var(--radius);padding:16px 18px;cursor:pointer;transition:background .15s,border-color .15s;box-shadow:0 1px 2px rgba(16,40,24,.05);display:flex;flex-direction:column;gap:4px;min-width:0}
+.drop:hover,.drop.over{background:var(--nx-soft);border-color:var(--nx-g3)}
+.drop:focus-visible{outline:2px solid var(--nx-g3);outline-offset:2px}
+.drop.ok{background:var(--nx-soft);border-color:#CDE5D5;border-top-color:var(--nx-g2)}
+.drop .step{font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.opt{margin-left:6px;font-size:10px;font-weight:600;color:var(--nx-g2);background:var(--nx-soft);border-radius:999px;padding:1px 7px;letter-spacing:.03em}
+.drop h2{font-size:16px;margin:2px 0;color:var(--nx-g1);font-weight:600}
+.drop p{margin:0;color:var(--muted);font-size:13px}
+.drop .pick{align-self:flex-start;margin-top:8px;font-size:13px;font-weight:500;color:#fff;background:var(--nx-g2);border-radius:6px;padding:6px 12px}
+.drop ul{margin:6px 0 0;padding:0;list-style:none;font-size:13px}
+.drop li{padding:4px 0;display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);overflow-wrap:anywhere}
+.drop li button{background:none;border:0;color:var(--muted);cursor:pointer;font-size:16px;line-height:1}
 input[type=file]{display:none}
-.bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:22px 0}
-button.primary{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:11px 20px;font:600 15px inherit;font-family:inherit;cursor:pointer}
-button.primary:disabled{opacity:.4;cursor:not-allowed}
-button.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 16px;font:500 14px inherit;font-family:inherit;cursor:pointer}
-label.chk{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:14px}
-.msg{border-radius:10px;padding:12px 16px;margin:10px 0;font-size:14px}.msg.warn{background:var(--warn-soft);color:var(--warn)}.msg.err{background:#fdecea;color:var(--err)}.msg.ok{background:var(--accent-soft);color:var(--accent)}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-top:16px;overflow:auto}
-.card h3{margin:0 0 10px;font-size:15px}
-.stats{display:flex;gap:28px;margin-bottom:6px;flex-wrap:wrap}.stats b{display:block;font-size:22px;font-variant-numeric:tabular-nums}.stats span{color:var(--muted);font-size:13px}
-table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
-th{font-weight:600;color:var(--muted);font-size:12px;position:sticky;top:0;background:var(--card)}
-td.seq{font:500 13px "IBM Plex Mono",monospace;color:var(--accent)}td.none{color:var(--err)}
-.scroll{max-height:440px;overflow:auto}
-.hidden{display:none}
+/* botões */
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button.primary{font:inherit;font-weight:500;background:var(--nx-g2);color:#fff;border:0;border-radius:6px;padding:9px 16px;cursor:pointer}
+button.primary:hover{background:var(--nx-g1)}
+button.primary:disabled{opacity:.4;cursor:not-allowed;background:var(--nx-g2)}
+button.ghost{font:inherit;background:#fff;color:var(--nx-g1);border:1px solid var(--line);border-radius:6px;padding:8px 14px;cursor:pointer}
+button.ghost:hover{background:var(--nx-soft)}
+button:focus-visible{outline:2px solid var(--nx-g3);outline-offset:2px}
+label.chk{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:13px}
+label.chk input{accent-color:var(--nx-g2)}
+/* avisos */
+#msgs:empty{display:none}
+.msg{border-radius:var(--radius);padding:10px 14px;margin:0 0 8px;font-size:13.5px;border:1px solid var(--line);border-left:4px solid}
+.msg.ok{background:var(--nx-soft);border-left-color:var(--ok);color:var(--nx-g1)}
+.msg.warn{background:#FDF5E6;border-color:#F1DDB3;border-left-color:var(--warn);color:#7A4F00}
+.msg.err{background:#FDEEEC;border-color:#F3CFCA;border-left-color:var(--bad);color:#8E2626}
+/* resultado */
+#result{display:flex;flex-direction:column;gap:18px}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;overflow:auto;box-shadow:0 1px 2px rgba(16,40,24,.05)}
+.card h3{margin:0 0 10px;font-size:15px;font-weight:600;border-left:4px solid var(--nx-g2);padding-left:10px}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.stats>div{border:1px solid var(--line);border-top:3px solid var(--nx-g2);border-radius:var(--radius);padding:10px 12px;display:flex;flex-direction:column-reverse;gap:2px}
+.stats b{font-family:"Source Serif 4",Georgia,serif;font-weight:400;font-size:1.7rem;line-height:1.1;font-variant-numeric:tabular-nums;color:var(--ink)}
+.stats span{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+#dlList button.ghost{font-size:12.5px;padding:6px 10px}
+table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-weight:500;color:var(--nx-g2);position:sticky;top:0;background:#fff;z-index:1}
+tbody tr:hover td,tr:hover td{background:#F7FBF8}
+td.seq{font-weight:600;color:var(--nx-g1)}td.none{color:var(--bad)}
+.scroll{max-height:460px;overflow:auto;border:1px solid var(--line);border-radius:var(--radius)}
+.hidden{display:none !important}
+.nx-assin{margin-top:24px;text-align:center;font-size:10px;letter-spacing:.03em;color:var(--muted);opacity:.8}
 </style>
 </head>
 <body>
 <main>
-<h1>Consolidação de Sequência de Entrega</h1>
-<p class="sub">Suba a Grade, a Programação e o Romaneio. O portal cruza loja + rota e grava no Romaneio a sequência de entrega: número da loja e letra do shopping/endereço (ex.: 1 - A, 2 - B, 3 - B).</p>
-
+<header class="nx-banner" id="topo">
+  <div class="nx-brand">
+    <div class="nx-logo"><img alt="Nexxa" src="data:image/png;base64,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"></div>
+    <div>
+      <h1 class="nx-title">Consolidação de Romaneios</h1>
+      <div class="nx-subtitle">Sequência de entrega por loja</div>
+    </div>
+  </div>
+</header>
+<p class="lead">Envie a <b>Grade</b>, a <b>Programação</b> e o <b>Romaneio</b>. O portal cruza loja + rota e grava em cada romaneio a sequência de entrega: número da loja e letra do ponto de parada (ex.: 1 - A, 2 - A, 3 - B).</p>
 <div class="grid">
   <div class="drop" id="dropGrade" tabindex="0">
     <div class="step">PASSO 1</div><h2>Grades - Rotas&gt;Shopping&gt;Loja</h2>
     <p>Grade geral consolidada (.xlsx) — define a ordem e agrupa lojas do mesmo shopping</p>
-    <ul id="listGrade"></ul><input type="file" id="fileGrade" accept=".xlsx,.xls,.xlsm,.csv" multiple>
+    <span class="pick">Escolher arquivo ou arrastar</span><ul id="listGrade"></ul><input type="file" id="fileGrade" accept=".xlsx,.xls,.xlsm,.csv" multiple>
   </div>
   <div class="drop" id="dropProg" tabindex="0">
     <div class="step">PASSO 2 <span class="opt">OPCIONAL COM GRADE</span></div><h2>Programação</h2>
     <p>.xlsx do dia — traz peso (PEDIDO) e data/hora de carregamento</p>
-    <ul id="listProg"></ul><input type="file" id="fileProg" accept=".xlsx,.xls,.xlsm,.csv" multiple>
+    <span class="pick">Escolher arquivo ou arrastar</span><ul id="listProg"></ul><input type="file" id="fileProg" accept=".xlsx,.xls,.xlsm,.csv" multiple>
   </div>
   <div class="drop" id="dropExp" tabindex="0">
     <div class="step">PASSO 3</div><h2>Romaneio</h2>
     <p>Relatório com um ou vários romaneios (.xls) — cada romaneio sai num arquivo próprio</p>
-    <ul id="listExp"></ul><input type="file" id="fileExp" accept=".xls,.xlsx,.html,.htm,.csv" multiple>
+    <span class="pick">Escolher arquivo ou arrastar</span><ul id="listExp"></ul><input type="file" id="fileExp" accept=".xls,.xlsx,.html,.htm,.csv" multiple>
   </div>
 </div>
 
@@ -81,8 +122,9 @@ td.seq{font:500 13px "IBM Plex Mono",monospace;color:var(--accent)}td.none{color
     <div id="dlList" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
   </div>
   <div class="card"><h3>Sequência por loja</h3><table id="tblSum"></table></div>
-  <div class="card"><h3>Romaneios consolidados <span id="prevNote" style="color:var(--muted);font-weight:400"></span></h3><div class="scroll"><table id="tblPrev"></table></div></div>
+  <div class="card"><h3>Romaneios consolidados <span id="prevNote" style="color:var(--muted);font-weight:400;font-size:13px"></span></h3><div class="scroll"><table id="tblPrev"></table></div></div>
 </section>
+<footer class="nx-assin">W ARRAES - Gerência Transporte · CNPJ 70.070.143/0001-55</footer>
 </main>
 <script>
 // ==== Núcleo da consolidação (funções puras, sem dependências) ====
@@ -438,7 +480,7 @@ function showResult(res) {
   const ok = res.rows.filter(r => r[iSeq] !== '' && r[iSeq] != null).length;
   const vol = res.summary.reduce((a, s) => a + s.volumes, 0), peso = res.summary.reduce((a, s) => a + s.peso, 0);
   $('stats').innerHTML = `<div><b>${esc(res.dataProg || '—')}</b><span>data da programação</span></div>
-    <div><b>${res.romaneios.length}</b><span>romaneios (abas)</span></div>
+    <div><b>${res.romaneios.length}</b><span>romaneios (arquivos)</span></div>
     <div><b>${res.rows.length}</b><span>itens</span></div>
     <div><b>${new Set(res.summary.map(s => s.loja)).size}</b><span>lojas</span></div>
     <div><b>${res.rows.length - ok}</b><span>itens sem sequência</span></div>
@@ -512,7 +554,7 @@ function arquivoNome(R) {
 
 function listaDownloads(res) {
   $('dlList').innerHTML = res.romaneios.map((R, i) =>
-    `<button class="ghost" data-i="${i}" style="font:500 13px 'IBM Plex Mono',monospace;padding:7px 12px">⬇ ${esc(arquivoNome(R))}</button>`).join('');
+    `<button class="ghost" data-i="${i}" >⬇ ${esc(arquivoNome(R))}</button>`).join('');
 }
 $('dlList').addEventListener('click', e => { const b = e.target.closest('button'); if (b) baixar([state.result.romaneios[+b.dataset.i]]); });
 
