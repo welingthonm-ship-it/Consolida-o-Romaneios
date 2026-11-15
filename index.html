@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal de Consolidação — Sequência de Entrega</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--ink:#1d2329;--muted:#66707a;--line:#e3e1da;--accent:#0f6b5c;--accent-soft:#e3f1ed;--warn:#a5520c;--warn-soft:#fbefe2;--err:#b3261e}
+@media (prefers-color-scheme:dark){:root{--bg:#15191c;--card:#1d2226;--ink:#e8eaec;--muted:#9aa3ab;--line:#2e353a;--accent:#4fbfa8;--accent-soft:#183a33;--warn:#f0a35c;--warn-soft:#3a2a1a;--err:#ff8a80}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif}
+main{max-width:1080px;margin:0 auto;padding:32px 20px 60px}
+h1{font-size:24px;margin:0 0 4px;font-weight:600}.sub{color:var(--muted);margin:0 0 28px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.opt{font:500 11px "IBM Plex Mono",monospace;color:var(--muted);margin-left:6px}
+.drop{background:var(--card);border:1.5px dashed var(--line);border-radius:12px;padding:22px;cursor:pointer;transition:.15s;position:relative}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop.ok{border-style:solid;border-color:var(--accent)}
+.drop .step{font:500 12px "IBM Plex Mono",monospace;color:var(--accent);letter-spacing:.06em}
+.drop h2{font-size:17px;margin:4px 0 2px}.drop p{margin:0;color:var(--muted);font-size:13.5px}
+.drop ul{margin:10px 0 0;padding:0;list-style:none;font-size:13px}.drop li{padding:3px 0;display:flex;justify-content:space-between;gap:8px}
+.drop li button{background:none;border:0;color:var(--muted);cursor:pointer;font-size:15px}
+input[type=file]{display:none}
+.bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:22px 0}
+button.primary{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:11px 20px;font:600 15px inherit;font-family:inherit;cursor:pointer}
+button.primary:disabled{opacity:.4;cursor:not-allowed}
+button.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 16px;font:500 14px inherit;font-family:inherit;cursor:pointer}
+label.chk{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:14px}
+.msg{border-radius:10px;padding:12px 16px;margin:10px 0;font-size:14px}.msg.warn{background:var(--warn-soft);color:var(--warn)}.msg.err{background:#fdecea;color:var(--err)}.msg.ok{background:var(--accent-soft);color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-top:16px;overflow:auto}
+.card h3{margin:0 0 10px;font-size:15px}
+.stats{display:flex;gap:28px;margin-bottom:6px;flex-wrap:wrap}.stats b{display:block;font-size:22px;font-variant-numeric:tabular-nums}.stats span{color:var(--muted);font-size:13px}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-weight:600;color:var(--muted);font-size:12px;position:sticky;top:0;background:var(--card)}
+td.seq{font:500 13px "IBM Plex Mono",monospace;color:var(--accent)}td.none{color:var(--err)}
+.scroll{max-height:440px;overflow:auto}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<main>
+<h1>Consolidação de Sequência de Entrega</h1>
+<p class="sub">Suba a Grade, a Programação e o Romaneio. O portal cruza loja + rota e grava no Romaneio a sequência de entrega: número da loja e letra do shopping/endereço (ex.: 1 - A, 2 - B, 3 - B).</p>
+
+<div class="grid">
+  <div class="drop" id="dropGrade" tabindex="0">
+    <div class="step">PASSO 1</div><h2>Grades - Rotas&gt;Shopping&gt;Loja</h2>
+    <p>Grade geral consolidada (.xlsx) — define a ordem e agrupa lojas do mesmo shopping</p>
+    <ul id="listGrade"></ul><input type="file" id="fileGrade" accept=".xlsx,.xls,.xlsm,.csv" multiple>
+  </div>
+  <div class="drop" id="dropProg" tabindex="0">
+    <div class="step">PASSO 2 <span class="opt">OPCIONAL COM GRADE</span></div><h2>Programação</h2>
+    <p>.xlsx do dia — traz peso (PEDIDO) e data/hora de carregamento</p>
+    <ul id="listProg"></ul><input type="file" id="fileProg" accept=".xlsx,.xls,.xlsm,.csv" multiple>
+  </div>
+  <div class="drop" id="dropExp" tabindex="0">
+    <div class="step">PASSO 3</div><h2>Romaneio</h2>
+    <p>Relatório com um ou vários romaneios (.xls) — cada romaneio sai num arquivo próprio</p>
+    <ul id="listExp"></ul><input type="file" id="fileExp" accept=".xls,.xlsx,.html,.htm,.csv" multiple>
+  </div>
+</div>
+
+<div class="bar">
+  <button class="primary" id="btnRun" disabled>Consolidar</button>
+  <button class="ghost" id="btnReset">↺ Zerar e recomeçar</button>
+  <label class="chk"><input type="checkbox" id="chkSort" checked> Ordenar por rota e sequência</label>
+</div>
+<div id="msgs"></div>
+
+<section id="result" class="hidden">
+  <div class="card">
+    <div class="stats" id="stats"></div>
+    <div class="bar" style="margin:12px 0 0">
+      <button class="primary" id="btnDown">Baixar todos os romaneios (.xlsx)</button>
+      <button class="ghost" id="btnCopy">Copiar tabela</button>
+            <span id="dlNote" style="color:var(--muted);font-size:13px"></span>
+    </div>
+    <div style="margin-top:12px;color:var(--muted);font-size:13px">Um arquivo por romaneio — clique para baixar só um:</div>
+    <div id="dlList" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+  </div>
+  <div class="card"><h3>Sequência por loja</h3><table id="tblSum"></table></div>
+  <div class="card"><h3>Romaneios consolidados <span id="prevNote" style="color:var(--muted);font-weight:400"></span></h3><div class="scroll"><table id="tblPrev"></table></div></div>
+</section>
+</main>
+<script>
+// ==== Núcleo da consolidação (funções puras, sem dependências) ====
+const toNum = v => { if (typeof v === 'number') return v; let s = String(v ?? '').trim(); if (!s) return 0; if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.'); const n = Number(s); return Number.isFinite(n) ? n : 0; };
+const fmtHora = (raw, txt) => {
+  if (typeof raw === 'number' && raw >= 0) { const m = Math.round((raw % 1) * 1440) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); }
+  const s = String(txt ?? raw ?? '').trim(); const mm = s.match(/(\d{1,2}):(\d{2})/); return mm ? mm[1].padStart(2, '0') + ':' + mm[2] : s;
+};
+const horaMin = h => { const m = String(h || '').match(/(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : 99999; };
+const fmtData = (raw, txt) => {
+  const p = n => String(n).padStart(2, '0');
+  if (typeof raw === 'number' && raw > 1) { const d = new Date(Math.round((Math.floor(raw) - 25569) * 86400000)); return p(d.getUTCDate()) + '/' + p(d.getUTCMonth() + 1) + '/' + d.getUTCFullYear(); }
+  const s = String(txt ?? raw ?? '').trim();
+  let m = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/); if (m) return p(m[3]) + '/' + p(m[2]) + '/' + m[1];
+  m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/); if (m) return p(m[1]) + '/' + p(m[2]) + '/' + (m[3].length === 2 ? '20' + m[3] : m[3]);
+  return s;
+};
+const deaccent = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '');
+const norm = v => deaccent(v).replace(/\s+/g, ' ').trim().toUpperCase();
+const DIAS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
+const diaSemana = dataBR => { const m = String(dataBR || '').match(/(\d{2})\/(\d{2})\/(\d{4})/); if (!m) return ''; return DIAS[new Date(Date.UTC(+m[3], +m[2] - 1, +m[1])).getUTCDay()]; };
+const letra = i => { let s = ''; i++; while (i > 0) { const r = (i - 1) % 26; s = String.fromCharCode(65 + r) + s; i = Math.floor((i - 1) / 26); } return s; };
+
+function findHeader(rows, mustHave) {
+  for (let i = 0; i < Math.min(rows.length, 30); i++) {
+    const h = (rows[i] || []).map(norm);
+    if (mustHave.every(k => h.includes(k))) return { idx: i, cols: h };
+  }
+  return null;
+}
+
+// ---------- Endereço / mesmo shopping ----------
+const TIPOS = { AV: 'AVENIDA', 'AV.': 'AVENIDA', R: 'RUA', 'R.': 'RUA', EST: 'ESTRADA', ROD: 'RODOVIA', AL: 'ALAMEDA', PCA: 'PRACA', 'PC': 'PRACA', TV: 'TRAVESSA' };
+function addrKey(end) {
+  let s = norm(end).replace(/\b(LJ|LOJA|LOJAS|SALA|BOX|PISO|BLOCO)\b.*$/, '').replace(/N[º°O]\s*/g, ' ');
+  s = s.replace(/[^A-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  const w = s.split(' ').map(x => TIPOS[x] || x).filter(x => !['DE', 'DA', 'DO', 'DOS', 'DAS', 'S', 'N', 'SN'].includes(x));
+  return w.join(' ');
+}
+const cepKey = c => { const d = String(c ?? '').replace(/\D/g, ''); return d && !/^0+$/.test(d) ? d.padStart(8, '0') : ''; };
+const coordOk = (la, lo) => Number.isFinite(la) && Number.isFinite(lo) && la < 6 && la > -35 && lo < -30 && lo > -75;
+function distKm(a, b) {
+  const R = 6371, r = x => x * Math.PI / 180, dLa = r(b.lat - a.lat), dLo = r(b.lon - a.lon);
+  const h = Math.sin(dLa / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(dLo / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+// mesmo ponto de parada = mesmo número no endereço (docas diferentes têm endereços diferentes)
+function numEnd(end) {
+  const s = norm(end).replace(/\b(LJ|LOJA|LOJAS|SALA|SL|BOX|PISO|BLOCO)\b.*$/, '');
+  let m = s.match(/,\s*(\d+)\b/) || s.match(/N[º°O]\.?\s*(\d+)\b/);
+  if (!m) { const k = s.match(/\bKM\s*(\d+)\b/); if (k) return 'KM' + k[1]; }
+  if (!m) { const all = [...s.matchAll(/(?:^|[\s,\/])(\d+)\b/g)]; if (all.length) m = all[all.length - 1]; }
+  if (!m) return '';
+  const n = m[1].replace(/^0+/, '');
+  return n;
+}
+// nome do shopping: palavras distintivas da DESCRICAO (sem rede/marca, termos genéricos, UF e texto entre parênteses)
+const SHOP_KW = /\b(SHOPPING|SHOP|SH|MALL|OUTLET|PLAZA|CENTER|PATIO)\b/;
+const STOP = new Set(['SHOPPING', 'SHOP', 'SH', 'MALL', 'OUTLET', 'PLAZA', 'CENTER', 'CENTRO', 'PATIO', 'PARK', 'PARQUE', 'BOULEVARD',
+  'SAO', 'SANTA', 'SANTO', 'DOS', 'DAS', 'NORTE', 'SUL', 'LESTE', 'OESTE', 'RUA', 'LOJA', 'NOVO', 'NOVA', 'GRANDE', 'PRAIA']);
+// devolve { forma, palavras }: forma = SHOPPING ("Shopping X") ou SH ("X SH"); palavras distintivas do nome
+function nomeShopping(desc, rede, cidade) {
+  const d = norm(desc).replace(/\(.*?\)/g, ' ');
+  if (!SHOP_KW.test(d)) return null;
+  const marca = new Set(norm(rede).split(/[^A-Z0-9]+/).concat(norm(cidade).split(/[^A-Z0-9]+/)).filter(Boolean));
+  const palavras = [...new Set(d.split(/[^A-Z0-9]+/).filter(w => w.length >= 3 && !/^\d+$/.test(w) && !STOP.has(w) && !marca.has(w)))];
+  return palavras.length ? { forma: /\bSHOPPING\b/.test(d) ? 'SHOPPING' : 'SH', palavras } : null;
+}
+// mesmo ponto de parada: mesma cidade e (mesmo número no endereço OU nome de shopping com 2+ coincidências)
+function mesmoLocal(a, b) {
+  if (a.cidade && b.cidade && a.cidade !== b.cidade) return false;
+  if (a.num && a.num === b.num) return true;
+  // mesmo shopping: 2 ou mais coincidências no nome, contando a palavra SHOPPING/SH
+  // ex.: SHOPPING ITAQUERA x SHOPPING METRO ITAQUERA -> SHOPPING + ITAQUERA = 2
+  if (a.nome && b.nome && a.nome.forma === b.nome.forma) {
+    const comuns = a.nome.palavras.filter(w => b.nome.palavras.includes(w)).length;
+    if (1 + comuns >= 2) return true;
+  }
+  return false;
+}
+
+// ---------- Leitura das bases ----------
+function parseGrade(rows, rawRows) {
+  rawRows = rawRows || rows;
+  const hd = findHeader(rows, ['LOJA', 'SUB-ROTA']);
+  if (!hd) throw new Error('Não encontrei as colunas ROTA / SUB-ROTA / LOJA na Grade.');
+  const c = n => hd.cols.indexOf(n);
+  const iRota = c('ROTA'), iSub = c('SUB-ROTA'), iLoja = c('LOJA'), iDesc = c('DESCRICAO'), iEnd = c('ENDERECO'),
+        iCep = c('CEP'), iLat = c('LATITUDE'), iLon = c('LONGITUDE'), iTT = c('TRANSIT TIME'), iHE = c('HORARIO DE ENTREGA'),
+        iCar = c('CARREGAMENTO'), iCid = c('CIDADE'), iRede = c('REDE'), iHC = c('HORARIO CARREGAMENTO'), iDia = c('DIA DE ENTREGA');
+  const out = [];
+  for (let r = hd.idx + 1; r < rows.length; r++) {
+    const row = rows[r] || [], raw = rawRows[r] || [];
+    const loja = norm(row[iLoja]); if (!loja) continue;
+    const rota = norm(row[iRota]), sub = norm(row[iSub]) || rota;
+    if (!sub) continue;
+    const hE = iHE >= 0 ? fmtHora(raw[iHE], row[iHE]) : '';
+    out.push({
+      rota, sub, loja, ord: r,
+      descricao: iDesc >= 0 ? String(row[iDesc] ?? '').trim() : '',
+      endereco: iEnd >= 0 ? String(row[iEnd] ?? '').trim() : '',
+      addr: iEnd >= 0 ? addrKey(row[iEnd]) : '', num: iEnd >= 0 ? numEnd(row[iEnd]) : '', cidade: iCid >= 0 ? norm(row[iCid]) : '',
+      nome: nomeShopping(iDesc >= 0 ? row[iDesc] : '', iRede >= 0 ? row[iRede] : '', iCid >= 0 ? row[iCid] : ''), cep: iCep >= 0 ? cepKey(raw[iCep] ?? row[iCep]) : '',
+      lat: iLat >= 0 ? parseFloat(String(raw[iLat]).replace(',', '.')) : NaN, lon: iLon >= 0 ? parseFloat(String(raw[iLon]).replace(',', '.')) : NaN,
+      transit: iTT >= 0 ? toNum(raw[iTT]) : 0, hEntrega: hE, hMin: horaMin(hE),
+      diaEntrega: iDia >= 0 ? norm(row[iDia]) : '',
+      diaCarreg: iCar >= 0 ? norm(row[iCar]) : '', horaCarreg: iHC >= 0 ? fmtHora(raw[iHC], row[iHC]) : ''
+    });
+  }
+  if (!out.length) throw new Error('A Grade não tem linhas de loja.');
+  return out;
+}
+
+function parseProg(rows, rawRows) {
+  rawRows = rawRows || rows;
+  const hd = findHeader(rows, ['LOJA']);
+  if (!hd) throw new Error('Não encontrei a coluna LOJA na Programação.');
+  const c = n => hd.cols.indexOf(n);
+  const iLoja = c('LOJA'), iRota = c('ROTA'), iSub = c('SUB-ROTA'), iSeq = c('SEQ'),
+        iH = c('H. ENTREGA'), iPeso = c('PEDIDO'),
+        iHC = hd.cols.findIndex(h => h.startsWith('HOR') && h.includes('CARREG')),
+        iDC = hd.cols.findIndex(h => h.startsWith('DATA') && h.includes('CARREG'));
+  const out = []; let prevKey = null, counter = 0;
+  for (let r = hd.idx + 1; r < rows.length; r++) {
+    const row = rows[r] || [], rawRow = rawRows[r] || [];
+    const loja = norm(row[iLoja]); if (!loja) continue;
+    const rota = iRota >= 0 ? norm(row[iRota]) : '';
+    const sub = iSub >= 0 ? norm(row[iSub]) : rota;
+    const grp = sub || rota;
+    counter = grp === prevKey ? counter + 1 : 1; prevKey = grp;
+    const raw = iSeq >= 0 ? Number(rawRow[iSeq]) : NaN;
+    out.push({
+      loja, rota, subrota: sub, seq: Number.isFinite(raw) && raw > 0 ? raw : counter,
+      hEntrega: iH >= 0 ? fmtHora(rawRow[iH], row[iH]) : '', peso: iPeso >= 0 ? toNum(rawRow[iPeso]) : 0,
+      dataCarreg: iDC >= 0 ? fmtData(rawRow[iDC], row[iDC]) : '', horaCarreg: iHC >= 0 ? fmtHora(rawRow[iHC], row[iHC]) : ''
+    });
+  }
+  return out;
+}
+
+function parseRomaneio(rows) {
+  const hd = findHeader(rows, ['LOJA']);
+  if (!hd) throw new Error('Não encontrei a coluna LOJA no Romaneio.');
+  const header = rows[hd.idx].map(v => String(v == null ? '' : v).trim());
+  let iRota = hd.cols.indexOf('OBS.');
+  if (iRota < 0) iRota = hd.cols.indexOf('OBS');
+  if (iRota < 0) iRota = hd.cols.indexOf('ROTA');
+  const iL = hd.cols.indexOf('LOJA');
+  // ignora títulos, totais e cabeçalhos repetidos de cada romaneio dentro do relatório
+  const data = rows.slice(hd.idx + 1).filter(r => r && norm(r[iL]) && norm(r[iL]) !== 'LOJA')
+    .map(r => header.map((_, i) => typeof r[i] === 'string' ? r[i].trim() : r[i]));
+  return { header, data, iLoja: hd.cols.indexOf('LOJA'), iRota };
+}
+
+// ---------- Sequência pela Grade: 1 - A, 2 - B, 3 - B ... ----------
+function sequenciaGrade(grade, rotaRom, lojasRom, diaRom) {
+  const grupos = new Map();
+  for (const g of grade) { if (!grupos.has(g.sub)) grupos.set(g.sub, []); grupos.get(g.sub).push(g); }
+  let best = null;
+  for (const [sub, lista] of grupos) {
+    const lojasG = new Set(lista.map(x => x.loja));
+    const hits = [...lojasRom].filter(l => lojasG.has(l)).length;
+    if (!hits) continue;
+    const nome = sub === rotaRom || lista[0].rota === rotaRom ? 1000 : 0;
+    const dia = diaRom && lista.some(x => x.diaCarreg === diaRom) ? 0.5 : 0;
+    const score = nome + hits + dia;
+    if (!best || score > best.score) best = { sub, lista, hits, score, porDia: dia > 0, porNome: nome > 0 };
+  }
+  if (!best) return null;
+  const paradas = best.lista.filter(x => lojasRom.has(x.loja))
+    .sort((a, b) => a.transit - b.transit || a.hMin - b.hMin || a.ord - b.ord);
+  const vistos = new Set(), seqs = new Map();
+  const grupos2 = []; let n = 0;
+  for (const p of paradas) {
+    if (vistos.has(p.loja)) continue; vistos.add(p.loja);
+    n++;
+    // só continua a mesma letra se a parada anterior for no mesmo local; se a sequência quebrar, vira outra letra
+    const atual = grupos2[grupos2.length - 1];
+    if (atual && atual.some(q => mesmoLocal(q, p))) atual.push(p); else grupos2.push([p]);
+    const l = grupos2.length - 1;
+    seqs.set(p.loja, { num: n, letra: letra(l), label: `${n} - ${letra(l)}`, hEntrega: p.hEntrega, diaEntrega: p.diaEntrega, endereco: p.endereco, shopping: p.descricao, horaCarreg: p.horaCarreg });
+  }
+  return { subGrade: best.sub, hits: best.hits, total: lojasRom.size, porDia: best.porDia, porNome: best.porNome, seqs };
+}
+
+// ---------- Consolidação ----------
+function consolidate({ grade, prog, exps, romDate }, { sort = true } = {}) {
+  const base = exps[0].header;
+  const useGrade = !!(grade && grade.length);
+  const iRomBase = base.findIndex(h => norm(h) === 'ROMANEIO');
+  // índice da Programação
+  const progLR = new Map(), progL = new Map();
+  for (const p of prog || []) {
+    for (const r of new Set([p.rota, p.subrota])) if (r) progLR.set(p.loja + '|' + r, p);
+    if (!progL.has(p.loja)) progL.set(p.loja, []);
+    progL.get(p.loja).push(p);
+  }
+  const findProg = (loja, rota) => { const p = progLR.get(loja + '|' + rota); if (p) return p; const l = progL.get(loja) || []; return l.length === 1 ? l[0] : null; };
+
+  // linhas do relatório (um ou vários romaneios)
+  const linhas = []; let ord = 0;
+  for (const e of exps) for (const r of e.data) {
+    const loja = norm(r[e.iLoja]), rota = e.iRota >= 0 ? norm(r[e.iRota]) : '';
+    const row = base.map(h => r[e.header.indexOf(h)]);
+    const rom = iRomBase >= 0 ? String(row[iRomBase] ?? '').trim() : '';
+    linhas.push({ loja, rota, rom, rk: rom + '|' + rota, row, ord: ord++ });
+  }
+  // a sequência é calculada por romaneio + rota
+  const grupos = new Map();
+  for (const x of linhas) { if (!grupos.has(x.rk)) grupos.set(x.rk, { rom: x.rom, rota: x.rota, lojas: new Set() }); grupos.get(x.rk).lojas.add(x.loja); }
+
+  const diaRom = diaSemana(romDate);
+  const assoc = [], seqMap = new Map();
+  if (useGrade) for (const [rk, gr] of grupos) {
+    const s = sequenciaGrade(grade, gr.rota, gr.lojas, diaRom);
+    assoc.push({ rom: gr.rom, rota: gr.rota, ...(s || { subGrade: null, hits: 0, total: gr.lojas.size }) });
+    if (s) for (const [loja, v] of s.seqs) seqMap.set(rk + '|' + loja, v);
+  }
+
+  const header = base.concat(useGrade ? ['SEQ ENTREGA', 'H. ENTREGA', 'SHOPPING / ENDEREÇO'] : ['SEQ ENTREGA', 'H. ENTREGA']);
+  const missing = new Map(), rows = [];
+  for (const x of linhas) {
+    const p = findProg(x.loja, x.rota);
+    const g = seqMap.get(x.rk + '|' + x.loja);
+    let seqNum = Infinity, label = '', hE = '', ender = '';
+    if (useGrade) {
+      if (g) { seqNum = g.num; label = g.label; hE = g.hEntrega || (p && p.hEntrega) || ''; ender = [g.shopping, g.endereco].filter(Boolean).join(' — '); }
+    } else if (p) { seqNum = p.seq; label = p.seq; hE = p.hEntrega; }
+    if (seqNum === Infinity) missing.set(x.loja, (missing.get(x.loja) || 0) + 1);
+    rows.push({ ...x, row: x.row.concat(useGrade ? [label, hE, ender] : [label, hE]), seqNum, label, p, g });
+  }
+  const cmpRom = (a, b) => a.localeCompare(b, 'pt-BR', { numeric: true });
+  if (sort) rows.sort((a, b) => cmpRom(a.rom, b.rom) || a.rota.localeCompare(b.rota) || a.seqNum - b.seqNum || a.ord - b.ord);
+  else rows.sort((a, b) => cmpRom(a.rom, b.rom) || a.ord - b.ord);
+
+  const iQ = base.findIndex(h => norm(h) === 'QTDE');
+  const resumoDe = lista => {
+    const m = new Map();
+    for (const x of lista) {
+      const k = x.rk + '|' + x.loja;
+      if (!m.has(k)) m.set(k, { rom: x.rom, rota: x.rota, loja: x.loja, seqNum: x.seqNum, seq: x.label === '' ? null : x.label, shopping: x.g ? x.g.shopping : '', endereco: x.g ? x.g.endereco : '', horaGrade: x.g ? [x.g.diaEntrega, x.g.hEntrega].filter(Boolean).join(' ') : '', itens: 0, volumes: 0, peso: x.p ? x.p.peso : 0 });
+      const s = m.get(k); s.itens++; s.volumes += iQ >= 0 ? toNum(x.row[iQ]) : 0;
+    }
+    return [...m.values()].sort((a, b) => cmpRom(a.rom, b.rom) || a.rota.localeCompare(b.rota) || a.seqNum - b.seqNum);
+  };
+  // data/hora de carregamento: Programação > Grade + data do relatório
+  const carregDe = lista => {
+    const dh = new Set();
+    for (const x of lista) {
+      const d = (x.p && x.p.dataCarreg) || romDate || '';
+      const h = (x.p && x.p.horaCarreg) || (x.g && x.g.horaCarreg) || '';
+      const v = [d, h].filter(Boolean).join(' ');
+      if (v) dh.add(v);
+    }
+    return [...dh].sort();
+  };
+
+  // um bloco por romaneio (vira uma aba)
+  const porRom = new Map();
+  for (const x of rows) { if (!porRom.has(x.rom)) porRom.set(x.rom, []); porRom.get(x.rom).push(x); }
+  const romaneios = [...porRom].map(([num, lista]) => ({
+    num, rotas: [...new Set(lista.map(x => x.rota).filter(Boolean))],
+    rows: lista.map(x => x.row), summary: resumoDe(lista), horaCarreg: carregDe(lista)
+  }));
+
+  // data da programação: a mais frequente da Programação; senão a do relatório
+  const cont = new Map();
+  for (const p of prog || []) if (p.dataCarreg) cont.set(p.dataCarreg, (cont.get(p.dataCarreg) || 0) + 1);
+  const dataProg = [...cont].sort((a, b) => b[1] - a[1])[0]?.[0] || romDate || '';
+
+  return { header, rows: rows.map(x => x.row), missing, summary: resumoDe(rows), assoc, useGrade, temPeso: !!(prog && prog.length),
+           horaCarreg: carregDe(rows), romaneios, dataProg, romDate, diaRom };
+}
+
+</script>
+<script>
+const state = { grade: [], prog: [], exp: [], result: null };
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtN = (n, d = 0) => Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: d });
+
+function msg(html, kind) { $('msgs').insertAdjacentHTML('beforeend', `<div class="msg ${kind}">${html}</div>`); }
+
+async function readBook(file, mustHave) {
+  if (typeof XLSX === 'undefined') throw new Error('A biblioteca de planilhas não carregou. Verifique a conexão e recarregue a página.');
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: 'array' });
+  for (const name of wb.SheetNames) {
+    const ws = wb.Sheets[name];
+    const fmt = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: null, blankrows: true });
+    const ok = fmt.slice(0, 30).some(r => { const h = (r || []).map(norm); return mustHave.every(k => h.includes(k)); });
+    if (ok) return { fmt, raw: XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null, blankrows: true }), buf };
+  }
+  throw new Error(`"${file.name}": nenhuma aba com as colunas ${mustHave.join(', ')}.`);
+}
+// data impressa no topo do relatório de expedição (ex.: 11/11/2026)
+function romaneioDate(buf) {
+  const txt = new TextDecoder('utf-8').decode(buf.slice(0, 4000));
+  const m = txt.match(/(\d{2}\/\d{2}\/\d{4})/);
+  return m ? m[1] : '';
+}
+
+const renders = [];
+function setupDrop(dropId, inputId, key, listId) {
+  const drop = $(dropId), input = $(inputId);
+  const add = files => { for (const f of files) state[key].push(f); render(); };
+  const render = () => {
+    $(listId).innerHTML = state[key].map((f, i) => `<li><span>📄 ${esc(f.name)}</span><button data-i="${i}" title="Remover">×</button></li>`).join('');
+    drop.classList.toggle('ok', state[key].length > 0);
+    $('btnRun').disabled = !((state.grade.length || state.prog.length) && state.exp.length);
+  };
+  drop.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { state[key].splice(+e.target.dataset.i, 1); render(); e.stopPropagation(); return; } input.click(); });
+  drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') input.click(); });
+  input.addEventListener('change', () => { add(input.files); input.value = ''; });
+  ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => add(e.dataTransfer.files));
+  renders.push(render);
+}
+setupDrop('dropGrade', 'fileGrade', 'grade', 'listGrade');
+setupDrop('dropProg', 'fileProg', 'prog', 'listProg');
+setupDrop('dropExp', 'fileExp', 'exp', 'listExp');
+
+$('btnReset').addEventListener('click', () => {
+  state.grade = []; state.prog = []; state.exp = []; state.result = null;
+  renders.forEach(f => f());
+  $('msgs').innerHTML = ''; $('dlNote').textContent = ''; $('dlList').innerHTML = '';
+  $('stats').innerHTML = ''; $('tblSum').innerHTML = ''; $('tblPrev').innerHTML = ''; $('prevNote').textContent = '';
+  $('result').classList.add('hidden');
+  $('chkSort').checked = true;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+$('btnRun').addEventListener('click', async () => {
+  $('msgs').innerHTML = ''; $('result').classList.add('hidden');
+  $('btnRun').disabled = true; $('btnRun').textContent = 'Processando…';
+  try {
+    let grade = [];
+    for (const f of state.grade) { const b = await readBook(f, ['LOJA', 'SUB-ROTA']); grade = grade.concat(parseGrade(b.fmt, b.raw)); }
+    let prog = [];
+    for (const f of state.prog) { const b = await readBook(f, ['LOJA']); prog = prog.concat(parseProg(b.fmt, b.raw)); }
+    const exps = []; let romDate = '';
+    for (const f of state.exp) { const b = await readBook(f, ['LOJA']); exps.push(parseRomaneio(b.raw)); romDate = romDate || romaneioDate(b.buf); }
+    const res = consolidate({ grade, prog, exps, romDate }, { sort: $('chkSort').checked });
+    state.result = res;
+    showResult(res);
+  } catch (e) { msg('⚠️ ' + esc(e.message || e), 'err'); }
+  $('btnRun').textContent = 'Consolidar'; $('btnRun').disabled = false;
+});
+
+function showResult(res) {
+  const iSeq = res.header.indexOf('SEQ ENTREGA');
+  const ok = res.rows.filter(r => r[iSeq] !== '' && r[iSeq] != null).length;
+  const vol = res.summary.reduce((a, s) => a + s.volumes, 0), peso = res.summary.reduce((a, s) => a + s.peso, 0);
+  $('stats').innerHTML = `<div><b>${esc(res.dataProg || '—')}</b><span>data da programação</span></div>
+    <div><b>${res.romaneios.length}</b><span>romaneios (abas)</span></div>
+    <div><b>${res.rows.length}</b><span>itens</span></div>
+    <div><b>${new Set(res.summary.map(s => s.loja)).size}</b><span>lojas</span></div>
+    <div><b>${res.rows.length - ok}</b><span>itens sem sequência</span></div>
+    <div><b>${fmtN(vol)}</b><span>volumes</span></div>
+    <div><b>${res.temPeso ? fmtN(peso, 3) : '—'}</b><span>peso (kg)</span></div>`;
+  listaDownloads(res);
+  for (const a of res.assoc || []) {
+    const r = a.rom ? `Romaneio <b>${esc(a.rom)}</b>, rota <b>${esc(a.rota)}</b>` : `Rota <b>${esc(a.rota)}</b>`;
+    if (!a.subGrade) msg(`${r}: rota não encontrada na Grade.`, 'warn');
+    else if (!a.porNome) msg(`${r}: esse código não existe na Grade — usei a rota <b>${esc(a.subGrade)}</b>, que tem ${a.hits} de ${a.total} lojas${a.porDia ? ` e carrega no mesmo dia da semana (${esc(res.diaRom)})` : ''}. Confira.`, 'warn');
+  }
+  if (res.missing.size) msg('Lojas sem sequência: <b>' + [...res.missing].map(([l, n]) => `${esc(l)} (${n} itens)`).join(', ') + '</b>.', 'warn');
+  else msg('✓ Todas as lojas dos romaneios receberam a sequência de entrega.', 'ok');
+  if (!res.temPeso) msg('Sem Programação: o peso fica em branco e o horário de carregamento vem da Grade.', 'warn');
+
+  $('tblSum').innerHTML = '<tr><th>Romaneio</th><th>Rota</th><th>SEQ</th>' + (res.useGrade ? '<th>Horário (Grade)</th>' : '') + '<th>Loja</th>' + (res.useGrade ? '<th>Shopping</th><th>Endereço</th>' : '') + '<th>Itens</th><th>Volumes</th><th>Peso (kg)</th></tr>' + res.summary.map(s =>
+    `<tr><td>${esc(s.rom)}</td><td>${esc(s.rota)}</td><td class="seq ${s.seq == null ? 'none' : ''}">${esc(s.seq ?? '—')}</td>` + (res.useGrade ? `<td class="seq">${esc(s.horaGrade || '—')}</td>` : '') + `<td>${esc(s.loja)}</td>` +
+    (res.useGrade ? `<td>${esc(s.shopping)}</td><td>${esc(s.endereco)}</td>` : '') +
+    `<td>${s.itens}</td><td>${fmtN(s.volumes)}</td><td>${res.temPeso ? fmtN(s.peso, 3) : '—'}</td></tr>`).join('');
+  const prev = res.rows.slice(0, 300);
+  $('prevNote').textContent = res.rows.length > 300 ? `(primeiras 300 de ${res.rows.length} linhas)` : '';
+  $('tblPrev').innerHTML = '<tr>' + res.header.map(h => `<th>${esc(h)}</th>`).join('') + '</tr>' + prev.map(r =>
+    '<tr>' + r.map((v, i) => `<td class="${i === iSeq ? 'seq' : ''}">${esc(v)}</td>`).join('') + '</tr>').join('');
+  $('result').classList.remove('hidden');
+}
+
+// uma aba por romaneio, com o cabeçalho do romaneio no topo
+function abaRomaneio(res, R) {
+  const vol = R.summary.reduce((a, s) => a + s.volumes, 0), peso = R.summary.reduce((a, s) => a + s.peso, 0);
+  const top = [
+    ['ROMANEIO:', R.num || '—'],
+    ['ROTA:', R.rotas.join(', ') || '—'],
+    ['DATA/HORA CARREGAMENTO:', R.horaCarreg.join(', ') || '—'],
+    ['VOLUMES:', vol],
+    ['PESO (kg):', res.temPeso ? Math.round(peso * 1000) / 1000 : '—'],
+    []
+  ];
+  const off = top.length;
+  const ws = XLSX.utils.aoa_to_sheet([...top, res.header, ...R.rows]);
+  ws['!merges'] = [0, 1, 2, 3, 4].map(r => ({ s: { r, c: 1 }, e: { r, c: Math.min(5, res.header.length - 1) } }));
+  ws['!cols'] = res.header.map((h, i) => ({ wch: Math.min(60, Math.max(h.length, ...R.rows.slice(0, 200).map(r => String(r[i] ?? '').length)) + 2) }));
+  ws['!cols'][0] = { wch: Math.max(ws['!cols'][0].wch, 26) };
+  ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: off, c: 0 }, e: { r: off + R.rows.length, c: res.header.length - 1 } }) };
+  if (ws['B5'] && typeof ws['B5'].v === 'number') ws['B5'].z = '#,##0.000';
+  return ws;
+}
+
+function nomeAba(nome, usados) {
+  let base = String(nome || 'Romaneio').replace(/[\[\]:*?\/\\]/g, '-').slice(0, 31) || 'Romaneio', n = base, i = 2;
+  while (usados.has(n.toUpperCase())) n = base.slice(0, 28) + ' (' + (i++) + ')';
+  usados.add(n.toUpperCase());
+  return n;
+}
+
+// um arquivo por romaneio: aba do romaneio + resumo por loja dele
+function buildXlsx(res, R) {
+  const wb = XLSX.utils.book_new(), usados = new Set();
+  XLSX.utils.book_append_sheet(wb, abaRomaneio(res, R), nomeAba(R.num, usados));
+  const cab = ['ROMANEIO', 'ROTA', 'SEQ'].concat(res.useGrade ? ['HORÁRIO (GRADE)'] : [], ['LOJA'], res.useGrade ? ['SHOPPING', 'ENDEREÇO'] : [], ['ITENS', 'VOLUMES', 'PESO (kg)']);
+  const sum = XLSX.utils.aoa_to_sheet([cab, ...R.summary.map(s => [s.rom, s.rota, s.seq ?? ''].concat(res.useGrade ? [s.horaGrade] : [], [s.loja], res.useGrade ? [s.shopping, s.endereco] : [], [s.itens, s.volumes, res.temPeso ? s.peso : '']))]);
+  XLSX.utils.book_append_sheet(wb, sum, nomeAba('Resumo por loja', usados));
+  return XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+}
+
+// nome: "Romaneio 234567 19h00.xlsx"
+function arquivoNome(R) {
+  const horas = [...new Set(R.horaCarreg.map(h => (h.match(/\d{1,2}:\d{2}/) || [''])[0]).filter(Boolean))];
+  const num = String(R.num || '').replace(/[^\w.-]/g, '');
+  return ['Romaneio', num, horas.map(h => h.replace(':', 'h')).join('_')].filter(Boolean).join(' ') + '.xlsx';
+}
+
+function listaDownloads(res) {
+  $('dlList').innerHTML = res.romaneios.map((R, i) =>
+    `<button class="ghost" data-i="${i}" style="font:500 13px 'IBM Plex Mono',monospace;padding:7px 12px">⬇ ${esc(arquivoNome(R))}</button>`).join('');
+}
+$('dlList').addEventListener('click', e => { const b = e.target.closest('button'); if (b) baixar([state.result.romaneios[+b.dataset.i]]); });
+
+$('btnDown').addEventListener('click', () => baixar(state.result.romaneios));
+async function baixar(lista) {
+  const note = $('dlNote'); note.textContent = '';
+  try {
+    for (const R of lista) {
+      const blob = new Blob([buildXlsx(state.result, R)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = arquivoNome(R);
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      if (lista.length > 1) await new Promise(r => setTimeout(r, 600));
+    }
+    note.textContent = `✓ ${lista.length} arquivo(s) baixado(s).` + (lista.length > 1 ? ' Se o navegador perguntar, permita vários downloads.' : '');
+  } catch (e) { note.textContent = 'Não foi possível baixar (' + (e.message || e) + '). Use "Copiar tabela".'; }
+}
+
+
+$('btnCopy').addEventListener('click', async () => {
+  const res = state.result;
+  const tsv = [res.header, ...res.rows].map(r => r.map(v => String(v ?? '').replace(/[\t\n]/g, ' ')).join('\t')).join('\n');
+  try { await navigator.clipboard.writeText(tsv); $('dlNote').textContent = '✓ Copiado — cole direto no Excel.'; }
+  catch { $('dlNote').textContent = 'O navegador bloqueou a cópia.'; }
+});
+</script>
+</body>
+</html>
